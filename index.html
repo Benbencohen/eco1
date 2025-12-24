@@ -1,203 +1,559 @@
-<!DOCTYPE html>
-<html lang="he" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EconMaster 3000</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <script src="https://unpkg.com/lucide@latest"></script>
+import React, { useState, useEffect } from 'react';
+import { BookOpen, TrendingUp, Calculator, Brain, Award, DollarSign, PieChart, ShoppingCart, Frown, Smile, X, Menu, ChevronLeft, ChevronRight, Play, RefreshCw, Lightbulb, AlertTriangle } from 'lucide-react';
 
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700;800&display=swap');
-        body { font-family: 'Assistant', sans-serif; }
-        .ltr { direction: ltr; display: inline-block; }
-    </style>
-</head>
-<body class="bg-gray-100">
-    <div id="root"></div>
+// --- מאגר מידע (מבוסס על הקבצים שהועלו: סילבוס, מבחנים, מילון) ---
 
-    <script type="text/babel">
-        // הוצאת הכלים מתוך ה-Global Objects של הספריות
-        const { useState, useEffect } = React;
+const glossaryData = [
+  { term: "MRS", full: "Marginal Rate of Substitution", icon: "🔄", desc: "שיעור תחלופה שולי", simple: "על כמה לאפות אני מוותר בשביל עוד בירה אחת ועדיין נשאר מבסוט באותה מידה.", formal: "היחס בו הצרכן מוכן להחליף מוצר אחד באחר תוך שמירה על אותה רמת תועלת (שיפוע עקומת האדישות)." },
+  { term: "MU", full: "Marginal Utility", icon: "😋", desc: "תועלת שולית", simple: "כמה כיף היה הביס האחרון. חוק התועלת השולית הפוחתת: הביס הראשון גן עדן, העשירי - בית חולים.", formal: "תוספת התועלת הנובעת מצריכת יחידה נוספת של המוצר (הנגזרת של פונקציית התועלת)." },
+  { term: "MC", full: "Marginal Cost", icon: "🔥", desc: "עלות שולית", simple: "כמה עולה לי לייצר *בדיוק עכשיו* עוד מנה אחת (כשכבר הכל רותח והעובד עייף).", formal: "התוספת לעלות הכוללת הנובעת מייצור יחידה נוספת." },
+  { term: "AC", full: "Average Cost", icon: "📉", desc: "עלות ממוצעת", simple: "כמה עלה לי הכל (כולל השכירות והארנונה) חלקי כמה שמכרתי. בטווח הארוך - זה המחיר המינימלי כדי לשרוד.", formal: "העלות הכוללת (TC) חלקי הכמות המיוצרת (Q)." },
+  { term: "AVC", full: "Average Variable Cost", icon: "⚡", desc: "עלות משתנה ממוצעת", simple: "העלות השוטפת (חומרים, חשמל) למנה. אם המחיר בשוק נמוך מזה - סגור את הבאסטה ומייד (Shutdown Rule).", formal: "העלות המשתנה (VC) חלקי הכמות המיוצרת (Q)." },
+  { term: "Pareto Efficiency", full: "יעילות פארטו", icon: "⚖️", desc: "הקצאה יעילה", simple: "מצב שבו אי אפשר לפנק מישהו אחד בלי לדפוק מישהו אחר.", formal: "מצב שבו לא ניתן לשפר את מצבו של פרט אחד מבלי להרע את מצבו של פרט אחר." },
+  { term: "Shutdown Rule", full: "כלל הסגירה", icon: "🛑", desc: "מתי סוגרים?", simple: "בטווח הקצר: אם המחיר לא מכסה את ה'שוטף' (AVC). בטווח הארוך: אם הוא לא מכסה את הכל (AC).", formal: "הפירמה תפסיק לייצר בטווח הקצר אם P < min(AVC)." }
+];
+
+const learningModules = [
+  {
+    id: "intro",
+    title: "מבוא: למה אנחנו פה?",
+    content: (
+      <div className="space-y-4">
+        <h3 className="text-xl font-bold text-blue-800">ברוכים הבאים לקורס "מיקרו-פלאפל"</h3>
+        <p>הכלכלה היא לא רק גרפים מפחידים, היא החיים עצמם! או לפחות, הניסיון הנואש שלנו להבין למה אנחנו תמיד במינוס.</p>
+        <p>בקורס הזה נלמד איך לקבל החלטות רציונליות (או לפחות להעמיד פנים שאנחנו כאלה), איך יצרנים מחליטים כמה לייצר, ולמה בסוף תמיד משלמים מיסים.</p>
+        <div className="bg-yellow-100 p-4 rounded-lg border-r-4 border-yellow-500">
+          <strong>הנחת היסוד:</strong> בני אדם רוצים למקסם תועלת (להיות מאושרים), ופירמות רוצות למקסם רווח (לעשות כסף). פשוט, לא?
+        </div>
+      </div>
+    )
+  },
+  {
+    id: "consumer",
+    title: "הצרכן: הדילמה הנצחית",
+    content: (
+      <div className="space-y-4">
+        <h3 className="text-xl font-bold text-green-700">תאוריית הצרכן</h3>
+        <p>לכל אחד מאיתנו יש <strong>קו תקציב</strong> (כמה כסף יש לי בארנק) ו<strong>פונקציית תועלת</strong> (מה אני אוהב).</p>
+        <ul className="list-disc list-inside space-y-2 text-gray-700">
+          <li><strong>פונקציה ליניארית (תחליפים מושלמים):</strong> $u(x,y) = ax + y$. אוהב הכל, העיקר שיהיה הרבה. הבחירה: הכל על המוצר שנותן הכי הרבה "תועלת לשקל".</li>
+          <li><strong>פונקציית קוב-דאגלס:</strong> $u(x,y) = x^\alpha y^\beta$. אוהב גיוון. תמיד יקנה קצת מזה וקצת מזה.</li>
+          <li><strong>משלימים מושלמים (Leontief):</strong> $u(x,y) = min(ax, by)$. נעל ימין ונעל שמאל. אין טעם באחד בלי השני.</li>
+        </ul>
+        <div className="mt-4 p-4 bg-white shadow rounded">
+          <h4 className="font-bold text-purple-600">💡 טיפ למבחן (מהקובץ):</h4>
+          <p>אם הפונקציה ליניארית $u = ax + y$ והצרכן בוחר <strong>רק X</strong>, סימן שהתועלת השולית לשקל של X גדולה יותר משל Y.</p>
+          <p className="font-mono text-sm mt-2 bg-gray-100 p-2 block ltr">MUx/Px &gt; MUy/Py {'=>'} a/Px &gt; 1/Py</p>
+        </div>
+      </div>
+    )
+  },
+  {
+    id: "producer",
+    title: "היצרן: דוכן הפלאפל",
+    content: (
+      <div className="space-y-4">
+        <h3 className="text-xl font-bold text-red-700">תאוריית היצרן</h3>
+        <p>היצרן הוא יצור פשוט. הוא רוצה $Profit = Revenue - Cost$.</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="border p-3 rounded bg-red-50">
+            <strong>חוק התפוקה השולית הפוחתת:</strong>
+            <p className="text-sm">העובד הראשון במטבח הוא נכס. העובד השני עוזר. העובד העשירי סתם מפריע ומפיל סירים.</p>
+          </div>
+          <div className="border p-3 rounded bg-green-50">
+            <strong>תנאי לרווח מקסימלי:</strong>
+            <p className="text-sm font-bold mt-1">$P = MC$</p>
+            <p className="text-sm">מייצרים עד שהעולה לייצר את המנה האחרונה שווה בדיוק למחיר שאפשר לקבל עליה.</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+];
+
+const examQuestions = [
+  {
+    id: 1,
+    question: "לשמעון פונקציית תועלת $u(x,y) = ax + y$. נתון $P_x=2, P_y=3$. שמעון צורך רק את מוצר X. מה ניתן להגיד על a?",
+    options: [
+      "a חייב להיות קטן מ-2/3",
+      "a חייב להיות גדול מ-2/3",
+      "a שווה בדיוק ל-1.5",
+      "שמעון פשוט שונא את מוצר Y באופן אישי"
+    ],
+    correct: 1,
+    explanation: "פתרון אנליטי: בפונקציה ליניארית (תחליפים מושלמים), משווים תועלת לשקל. $MU_x = a, MU_y = 1$. אם צורכים רק X, אז $MU_x/P_x > MU_y/P_y$. כלומר $a/2 > 1/3$, ולכן $a > 2/3$."
+  },
+  {
+    id: 2,
+    question: "מתי יצרן רציונלי יחליט לסגור את המפעל בטווח הקצר (Shutdown)?",
+    options: [
+      "כשהוא מפסיד כסף (הרווח שלילי)",
+      "כשהמחיר נמוך מהעלות הממוצעת הכוללת ($P < AC$)",
+      "כשהמחיר נמוך מהעלות המשתנה הממוצעת ($P < AVC$)",
+      "כשנגמר הקפה במשרד"
+    ],
+    correct: 2,
+    explanation: "כלל הסגירה: אם המחיר מכסה את העלויות המשתנות (חשמל, חומרים), שווה להמשיך לייצר כדי לכסות לפחות חלק מהעלויות הקבועות (שכירות). אם המחיר אפילו לא מכסה את המשתנות ($P < AVC$), סוגרים מייד."
+  },
+  {
+    id: 3,
+    question: "נתונה פונקציית ייצור $Q = L^{0.5}$. מה ניתן לומר על התפוקה השולית של העובדים?",
+    options: [
+      "היא קבועה (כל עובד מוסיף אותו דבר)",
+      "היא עולה (כל עובד מוסיף יותר מקודמו)",
+      "היא פוחתת (כל עובד מוסיף פחות מקודמו)",
+      "היא תלויה במצב הרוח של המנהל"
+    ],
+    correct: 2,
+    explanation: "גזירה פשוטה: הנגזרת של $L^{0.5}$ היא $0.5L^{-0.5}$. ככל ש-L גדל, הנגזרת (התפוקה השולית) קטנה. זהו חוק התפוקה השולית הפוחתת הקלאסי."
+  },
+  {
+    id: 4,
+    question: "בתיבת אדג'וורת', מה מאפיין נקודה על 'עקומת החוזה' (Contract Curve)?",
+    options: [
+      "לשני הצרכנים יש בדיוק אותה כמות מוצרים",
+      "מתקיים שוויון בשיעורי התחלופה השוליים ($MRS_A = MRS_B$)",
+      "אחד הצרכנים מקבל הכל והשני כלום",
+      "המחירים שווים ל-0"
+    ],
+    correct: 1,
+    explanation: "עקומת החוזה היא אוסף כל ההקצאות היעילות פארטו. יעילות מושגת כשהעקומות משיקות, כלומר השיפועים (MRS) שווים."
+  },
+  {
+    id: 5,
+    question: "במודל סולו (מאקרו), מה קורה למשק במצב עמיד (Steady State) ללא שיפור טכנולוגי?",
+    options: [
+      "התוצר לנפש ממשיך לגדול לנצח",
+      "ההון לנפש והתוצר לנפש קבועים",
+      "האוכלוסייה מפסיקה לגדול",
+      "הפחת נעלם"
+    ],
+    correct: 1,
+    explanation: "במצב עמיד, ההשקעה החדשה בדיוק מכסה את הפחת וגידול האוכלוסייה, כך שכמות ההון לעובד (וכתוצאה מכך התוצר לעובד) נשארת קבועה."
+  }
+];
+
+// --- קומפוננטות עזר ---
+
+const ProductionSimulator = () => {
+  const [workers, setWorkers] = useState(1);
+  const [price, setPrice] = useState(20);
+  
+  // פונקציית ייצור: Q = 10 * sqrt(L)
+  const production = Math.floor(10 * Math.sqrt(workers));
+  const wage = 100;
+  const fixedCost = 50;
+  
+  const totalCost = (workers * wage) + fixedCost;
+  const variableCost = workers * wage;
+  const revenue = production * price;
+  const profit = revenue - totalCost;
+  
+  const avc = production > 0 ? (variableCost / production).toFixed(1) : 0;
+  const ac = production > 0 ? (totalCost / production).toFixed(1) : 0;
+  
+  const prevProduction = Math.floor(10 * Math.sqrt(workers > 0 ? workers - 1 : 0));
+  const marginalProduct = workers === 0 ? 0 : production - prevProduction;
+  const marginalRevenue = marginalProduct * price; // VMP
+
+  return (
+    <div className="bg-white p-6 rounded-lg shadow-md border-t-4 border-yellow-500">
+      <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+        <ShoppingCart className="text-yellow-600" />
+        סימולטור דוכן הפלאפל
+      </h2>
+      <p className="text-gray-600 text-sm mb-6">
+        נסו למצוא את מספר העובדים האופטימלי. שימו לב איך התפוקה השולית יורדת ככל שמוסיפים עובדים!
+      </p>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="space-y-6">
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <label className="block text-sm font-medium mb-2">מספר עובדים ($L$): <span className="text-blue-600 text-lg">{workers}</span></label>
+            <input 
+              type="range" min="0" max="15" value={workers} 
+              onChange={(e) => setWorkers(Number(e.target.value))}
+              className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+            />
+          </div>
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <label className="block text-sm font-medium mb-2">מחיר מנה ($P$): <span className="text-green-600 text-lg">{price} ₪</span></label>
+            <input 
+              type="range" min="10" max="50" step="5" value={price} 
+              onChange={(e) => setPrice(Number(e.target.value))}
+              className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer accent-green-600"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-3 font-mono text-sm">
+          <div className="flex justify-between p-2 bg-gray-100 rounded">
+            <span>כמות מיוצרת ($Q$):</span>
+            <span className="font-bold">{production}</span>
+          </div>
+          <div className="flex justify-between p-2 bg-green-50 text-green-800 rounded">
+            <span>הכנסות ($TR$):</span>
+            <span className="font-bold">{revenue} ₪</span>
+          </div>
+          <div className="flex justify-between p-2 bg-red-50 text-red-800 rounded">
+            <span>עלויות ($TC$):</span>
+            <span className="font-bold">{totalCost} ₪</span>
+          </div>
+          <div className={`flex justify-between p-3 rounded text-lg font-bold border ${profit >= 0 ? 'bg-green-100 border-green-300 text-green-900' : 'bg-red-100 border-red-300 text-red-900'}`}>
+            <span>רווח ($\pi$):</span>
+            <span>{profit} ₪</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 text-center text-xs">
+        <div className="p-2 bg-blue-50 rounded">
+          <div className="font-bold mb-1">תפוקה שולית ($MP_L$)</div>
+          <div className="text-xl">{marginalProduct}</div>
+          <div className="text-gray-500">מנות שהוסיף העובד האחרון</div>
+        </div>
+        <div className="p-2 bg-purple-50 rounded">
+          <div className="font-bold mb-1">עלות ממוצעת ($AC$)</div>
+          <div className="text-xl">{ac} ₪</div>
+          <div className="text-gray-500">עלות למנה</div>
+        </div>
+        <div className="p-2 bg-orange-50 rounded">
+          <div className="font-bold mb-1">שווי תפוקה שולית ($VMP$)</div>
+          <div className={`text-xl ${marginalRevenue < wage ? 'text-red-600' : 'text-green-600'}`}>{marginalRevenue} ₪</div>
+          <div className="text-gray-500">הכנסה מהעובד האחרון (שכר: {wage})</div>
+        </div>
+      </div>
+      
+      {marginalRevenue < wage && workers > 0 && (
+        <div className="mt-4 flex items-center gap-2 text-red-600 bg-red-50 p-2 rounded justify-center animate-pulse">
+          <AlertTriangle size={18} />
+          <span>שים לב! העובד האחרון עולה {wage}₪ אך מכניס רק {marginalRevenue}₪. תפטר אותו!</span>
+        </div>
+      )}
+      
+      {price < Number(avc) && production > 0 && (
+        <div className="mt-2 flex items-center gap-2 text-white bg-red-600 p-2 rounded justify-center">
+          <X size={18} />
+          <span>SHUTDOWN! המחיר ({price}) נמוך מהעלות המשתנה הממוצעת ({avc}). סגור מיד!</span>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// --- אפליקציה ראשית ---
+
+export default function EconMasterApp() {
+  const [activeTab, setActiveTab] = useState('home');
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [score, setScore] = useState(0);
+  const [showAnswer, setShowAnswer] = useState(false);
+  const [selectedOption, setSelectedOption] = useState(null);
+  const [isSidebarOpen, setSidebarOpen] = useState(true);
+
+  const handleAnswer = (index) => {
+    setSelectedOption(index);
+    setShowAnswer(true);
+    if (index === examQuestions[currentQuestion].correct) {
+      setScore(score + 1);
+    }
+  };
+
+  const nextQuestion = () => {
+    if (currentQuestion < examQuestions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1);
+      setShowAnswer(false);
+      setSelectedOption(null);
+    } else {
+      setActiveTab('summary');
+    }
+  };
+
+  const resetQuiz = () => {
+    setCurrentQuestion(0);
+    setScore(0);
+    setShowAnswer(false);
+    setSelectedOption(null);
+    setActiveTab('exam');
+  };
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'home':
+        return (
+          <div className="p-6 md:p-12 text-center space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="inline-block p-6 rounded-full bg-blue-100 mb-4">
+              <Brain size={64} className="text-blue-600" />
+            </div>
+            <h1 className="text-4xl md:text-6xl font-black text-gray-800 mb-4 tracking-tight">
+              האקונו-מאסטר <span className="text-blue-600">3000</span>
+            </h1>
+            <p className="text-xl md:text-2xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+              הלומדה היחידה שתלמד אתכם מיקרו, מאקרו, ואיך להכין פלאפל ברווח מקסימלי, מבלי להירדם.
+            </p>
+            <div className="flex flex-col md:flex-row gap-4 justify-center mt-8">
+              <button onClick={() => setActiveTab('learn')} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full shadow-lg transform transition hover:scale-105 flex items-center justify-center gap-2">
+                <BookOpen /> התחל ללמוד
+              </button>
+              <button onClick={() => setActiveTab('simulator')} className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-4 px-8 rounded-full shadow-lg transform transition hover:scale-105 flex items-center justify-center gap-2">
+                <Play /> לסימולטור
+              </button>
+            </div>
+            <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 text-right max-w-4xl mx-auto">
+              <div className="bg-white p-4 rounded shadow border-r-4 border-green-500">
+                <h3 className="font-bold flex items-center gap-2"><DollarSign size={16} /> תאוריית הצרכן</h3>
+                <p className="text-sm text-gray-600">למה אנחנו קונים דברים שאנחנו לא צריכים?</p>
+              </div>
+              <div className="bg-white p-4 rounded shadow border-r-4 border-red-500">
+                <h3 className="font-bold flex items-center gap-2"><TrendingUp size={16} /> תאוריית היצרן</h3>
+                <p className="text-sm text-gray-600">איך לעשות כסף ולמזער עלויות (או לפחות לנסות).</p>
+              </div>
+              <div className="bg-white p-4 rounded shadow border-r-4 border-purple-500">
+                <h3 className="font-bold flex items-center gap-2"><Award size={16} /> הכנה למבחן</h3>
+                <p className="text-sm text-gray-600">שאלות אמיתיות ממבחנים עם הסברים בגובה העיניים.</p>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'learn':
+        return (
+          <div className="p-6 max-w-4xl mx-auto space-y-8">
+            <h2 className="text-3xl font-bold text-gray-800 border-b pb-4">חומר הלימוד</h2>
+            <div className="grid gap-6">
+              {learningModules.map((module) => (
+                <div key={module.id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition">
+                  <div className="bg-gray-50 p-4 border-b font-bold text-lg flex items-center gap-2">
+                    <Lightbulb className="text-yellow-500" size={20} />
+                    {module.title}
+                  </div>
+                  <div className="p-6">
+                    {module.content}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="text-center pt-8">
+              <button onClick={() => setActiveTab('glossary')} className="text-blue-600 hover:underline">
+                עבור למילון המושגים &larr;
+              </button>
+            </div>
+          </div>
+        );
+
+      case 'glossary':
+        return (
+          <div className="p-6 max-w-5xl mx-auto">
+            <h2 className="text-3xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+              <BookOpen className="text-blue-600" />
+              מילון המושגים השלם
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {glossaryData.map((item, idx) => (
+                <div key={idx} className="bg-white rounded-xl shadow-md hover:shadow-xl transition duration-300 overflow-hidden group">
+                  <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-4 text-white">
+                    <div className="text-4xl mb-2 group-hover:scale-110 transition-transform">{item.icon}</div>
+                    <h3 className="text-xl font-bold">{item.term}</h3>
+                    <p className="text-blue-100 text-xs">{item.full}</p>
+                  </div>
+                  <div className="p-4 space-y-3">
+                    <p className="font-medium text-gray-800 border-b pb-2">{item.desc}</p>
+                    <div>
+                      <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">בשפת רחוב:</span>
+                      <p className="text-sm text-gray-700 italic">"{item.simple}"</p>
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">פורמלי:</span>
+                      <p className="text-xs text-gray-600 bg-gray-50 p-2 rounded">{item.formal}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 'simulator':
+        return (
+          <div className="p-6 flex flex-col items-center justify-center min-h-[80vh]">
+            <ProductionSimulator />
+            <div className="mt-8 max-w-2xl text-center text-gray-500 text-sm">
+              <p>* הסימולטור מניח שוק תחרותי (P קבוע) ועלויות קבועות חיוביות. בטווח הארוך, אם הרווח חיובי, ייכנסו מתחרים והמחיר ירד עד שהרווח יהיה אפס (תעשיית הפלאפל בחיפה אכזרית).</p>
+            </div>
+          </div>
+        );
+
+      case 'exam':
+        const question = examQuestions[currentQuestion];
+        return (
+          <div className="p-6 max-w-2xl mx-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">המבחן הגדול</h2>
+              <div className="text-sm font-mono bg-blue-100 text-blue-800 px-3 py-1 rounded-full">
+                שאלה {currentQuestion + 1} מתוך {examQuestions.length}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+              <div className="p-8">
+                <p className="text-lg font-medium mb-6 leading-relaxed" dangerouslySetInnerHTML={{ __html: question.question }} />
+                
+                <div className="space-y-3">
+                  {question.options.map((option, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => !showAnswer && handleAnswer(idx)}
+                      disabled={showAnswer}
+                      className={`w-full text-right p-4 rounded-xl border-2 transition-all flex items-center justify-between
+                        ${showAnswer 
+                          ? idx === question.correct 
+                            ? 'bg-green-100 border-green-500 text-green-800' 
+                            : idx === selectedOption 
+                              ? 'bg-red-100 border-red-500 text-red-800' 
+                              : 'border-gray-100 opacity-50'
+                          : 'border-gray-200 hover:border-blue-400 hover:bg-blue-50'
+                        }
+                      `}
+                    >
+                      <span>{option}</span>
+                      {showAnswer && idx === question.correct && <Smile className="text-green-600" />}
+                      {showAnswer && idx === selectedOption && idx !== question.correct && <Frown className="text-red-600" />}
+                    </button>
+                  ))}
+                </div>
+
+                {showAnswer && (
+                  <div className="mt-6 animate-in fade-in slide-in-from-top-2">
+                    <div className={`p-4 rounded-lg ${selectedOption === question.correct ? 'bg-green-50 border-r-4 border-green-500' : 'bg-red-50 border-r-4 border-red-500'}`}>
+                      <h4 className="font-bold mb-1">
+                        {selectedOption === question.correct ? '🎉 בול בפוני!' : '🤦‍♂️ אוי ואבוי...'}
+                      </h4>
+                      <p className="text-sm text-gray-700" dangerouslySetInnerHTML={{ __html: question.explanation }} />
+                    </div>
+                    <div className="mt-6 flex justify-end">
+                      <button 
+                        onClick={nextQuestion}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg flex items-center gap-2"
+                      >
+                        הבא <ChevronLeft />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="bg-gray-50 px-8 py-4 border-t flex justify-between items-center text-sm text-gray-500">
+                <span>ניקוד נוכחי: {score}</span>
+                <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-blue-500 transition-all duration-500" 
+                    style={{ width: `${((currentQuestion + (showAnswer ? 1 : 0)) / examQuestions.length) * 100}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'summary':
+        return (
+          <div className="p-10 text-center max-w-2xl mx-auto bg-white rounded-2xl shadow-xl mt-10">
+            <Award size={80} className={`mx-auto mb-6 ${score > examQuestions.length / 2 ? 'text-yellow-500' : 'text-gray-400'}`} />
+            <h2 className="text-3xl font-bold mb-2">סיכום המבחן</h2>
+            <div className="text-6xl font-black text-blue-600 mb-4">
+              {Math.round((score / examQuestions.length) * 100)}
+            </div>
+            <p className="text-xl text-gray-600 mb-8">
+              ענית נכון על {score} מתוך {examQuestions.length} שאלות.
+              {score === examQuestions.length ? " פרופסור לכלכלה! 🎓" : score > 2 ? " עובר, אבל בקושי... 😅" : " נראה לי שצריך לחזור על החומר... 📚"}
+            </p>
+            <button 
+              onClick={resetQuiz}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full shadow inline-flex items-center gap-2"
+            >
+              <RefreshCw /> נסה שוב
+            </button>
+          </div>
+        );
+
+      default:
+        return <div>עמוד לא נמצא</div>;
+    }
+  };
+
+  return (
+    <div dir="rtl" className="flex h-screen bg-gray-100 font-sans text-gray-800 overflow-hidden">
+      {/* Sidebar Desktop */}
+      <aside className={`bg-slate-900 text-white w-64 flex-shrink-0 hidden md:flex flex-col transition-all duration-300 ${isSidebarOpen ? '' : '-mr-64'}`}>
+        <div className="p-6 border-b border-slate-800 flex items-center gap-3">
+          <PieChart className="text-blue-400" />
+          <span className="font-bold text-xl tracking-wider">EconMaster</span>
+        </div>
+        <nav className="flex-1 p-4 space-y-2">
+          {[
+            { id: 'home', label: 'ראשי', icon: <Brain size={20} /> },
+            { id: 'learn', label: 'חומר לימוד', icon: <BookOpen size={20} /> },
+            { id: 'glossary', label: 'מילון מושגים', icon: <AlertTriangle size={20} /> },
+            { id: 'simulator', label: 'סימולטור', icon: <Calculator size={20} /> },
+            { id: 'exam', label: 'מבחן', icon: <Award size={20} /> },
+          ].map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              className={`w-full text-right p-3 rounded-lg flex items-center gap-3 transition-colors ${activeTab === item.id ? 'bg-blue-600 text-white' : 'hover:bg-slate-800 text-slate-300'}`}
+            >
+              {item.icon}
+              {item.label}
+            </button>
+          ))}
+        </nav>
+        <div className="p-4 border-t border-slate-800 text-xs text-slate-500 text-center">
+          © 2025 הפקולטה למדעי הפלאפל
+        </div>
+      </aside>
+
+      {/* Mobile Header */}
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+        <header className="bg-white shadow-sm p-4 flex items-center justify-between md:hidden z-10">
+          <span className="font-bold text-lg flex items-center gap-2"><PieChart className="text-blue-600" /> EconMaster</span>
+          <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="p-2 bg-gray-100 rounded">
+            {isSidebarOpen ? <X /> : <Menu />}
+          </button>
+        </header>
         
-        // יצירת קומפוננטת אייקון שתעבוד עם Lucide ב-CDN
-        const Icon = ({ name, size = 24, className = "" }) => {
-            const iconRef = React.useRef(null);
-            
-            React.useEffect(() => {
-                if (window.lucide) {
-                    window.lucide.createIcons();
-                }
-            }, [name]);
+        {/* Mobile Menu Overlay */}
+        {isSidebarOpen && (
+          <div className="absolute inset-0 bg-slate-900 z-50 p-6 md:hidden flex flex-col animate-in fade-in slide-in-from-top-10">
+             <div className="flex justify-between items-center mb-8 text-white">
+                <span className="font-bold text-xl">תפריט</span>
+                <button onClick={() => setSidebarOpen(false)}><X /></button>
+             </div>
+             <nav className="space-y-4">
+              {[
+                { id: 'home', label: 'ראשי', icon: <Brain /> },
+                { id: 'learn', label: 'חומר לימוד', icon: <BookOpen /> },
+                { id: 'glossary', label: 'מילון מושגים', icon: <AlertTriangle /> },
+                { id: 'simulator', label: 'סימולטור', icon: <Calculator /> },
+                { id: 'exam', label: 'מבחן', icon: <Award /> },
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => { setActiveTab(item.id); setSidebarOpen(false); }}
+                  className={`w-full text-right p-4 rounded-xl flex items-center gap-4 text-lg ${activeTab === item.id ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300'}`}
+                >
+                  {item.icon}
+                  {item.label}
+                </button>
+              ))}
+            </nav>
+          </div>
+        )}
 
-            return <i data-lucide={name} style={{width: size, height: size}} className={className}></i>;
-        };
-
-        // --- מאגר מידע ---
-        const glossaryData = [
-            { term: "MRS", full: "Marginal Rate of Substitution", icon: "refresh-cw", desc: "שיעור תחלופה שולי", simple: "על כמה לאפות אני מוותר בשביל עוד בירה אחת ועדיין נשאר מבסוט באותה מידה.", formal: "היחס בו הצרכן מוכן להחליף מוצר אחד באחר תוך שמירה על אותה רמת תועלת (שיפוע עקומת האדישות)." },
-            { term: "MU", full: "Marginal Utility", icon: "smile", desc: "תועלת שולית", simple: "כמה כיף היה הביס האחרון. חוק התועלת השולית הפוחתת: הביס הראשון גן עדן, העשירי - בית חולים.", formal: "תוספת התועלת הנובעת מצריכת יחידה נוספת של המוצר (הנגזרת של פונקציית התועלת)." },
-            { term: "MC", full: "Marginal Cost", icon: "flame", desc: "עלות שולית", simple: "כמה עולה לי לייצר *בדיוק עכשיו* עוד מנה אחת (כשכבר הכל רותח והעובד עייף).", formal: "התוספת לעלות הכוללת הנובעת מייצור יחידה נוספת." },
-            { term: "AC", full: "Average Cost", icon: "trending-down", desc: "עלות ממוצעת", simple: "כמה עלה לי הכל (כולל השכירות והארנונה) חלקי כמה שמכרתי. בטווח הארוך - זה המחיר המינימלי כדי לשרוד.", formal: "העלות הכוללת (TC) חלקי הכמות המיוצרת (Q)." },
-            { term: "Shutdown Rule", full: "כלל הסגירה", icon: "octagon", desc: "מתי סוגרים?", simple: "בטווח הקצר: אם המחיר לא מכסה את ה'שוטף' (AVC). בטווח הארוך: אם הוא לא מכסה את הכל (AC).", formal: "הפירמה תפסיק לייצר בטווח הקצר אם P < min(AVC)." }
-        ];
-
-        const learningModules = [
-            {
-                id: "intro",
-                title: "מבוא: למה אנחנו פה?",
-                content: (
-                    <div className="space-y-4">
-                        <h3 className="text-xl font-bold text-blue-800">ברוכים הבאים לקורס "מיקרו-פלאפל"</h3>
-                        <p>הכלכלה היא לא רק גרפים מפחידים, היא החיים עצמם! או לפחות, הניסיון הנואש שלנו להבין למה אנחנו תמיד במינוס.</p>
-                        <div className="bg-yellow-100 p-4 rounded-lg border-r-4 border-yellow-500 text-right">
-                            <strong>הנחת היסוד:</strong> בני אדם רוצים למקסם תועלת (להיות מאושרים), ופירמות רוצות למקסם רווח (לעשות כסף). פשוט, לא?
-                        </div>
-                    </div>
-                )
-            },
-            {
-                id: "consumer",
-                title: "הצרכן: הדילמה הנצחית",
-                content: (
-                    <div className="space-y-4">
-                        <h3 className="text-xl font-bold text-green-700">תאוריית הצרכן</h3>
-                        <ul className="list-disc list-inside space-y-2 text-gray-700">
-                            <li><strong>פונקציה ליניארית:</strong> u(x,y) = ax + y.</li>
-                            <li><strong>קוב-דאגלס:</strong> u(x,y) = xᵃyᵇ.</li>
-                        </ul>
-                    </div>
-                )
-            }
-        ];
-
-        const examQuestions = [
-            {
-                id: 1,
-                question: "לשמעון פונקציית תועלת u(x,y) = ax + y. נתון Px=2, Py=3. שמעון צורך רק את מוצר X. מה ניתן להגיד על a?",
-                options: ["a < 2/3", "a > 2/3", "a = 1.5", "שמעון שונא את Y"],
-                correct: 1,
-                explanation: "אם צורכים רק X, אז התועלת לשקל של X גדולה משל Y: a/2 > 1/3 => a > 2/3."
-            },
-            {
-                id: 2,
-                question: "מתי יצרן יסגור את המפעל בטווח הקצר?",
-                options: ["כשמפסידים כסף", "כש-P < AC", "כש-P < AVC", "כשנגמר הקפה"],
-                correct: 2,
-                explanation: "אם המחיר לא מכסה אפילו את ההוצאות השוטפות (AVC), סוגרים מיד."
-            }
-        ];
-
-        // --- סימולטור ---
-        const ProductionSimulator = () => {
-            const [workers, setWorkers] = useState(1);
-            const [price, setPrice] = useState(20);
-            const production = Math.floor(10 * Math.sqrt(workers));
-            const wage = 100;
-            const totalCost = (workers * wage) + 50;
-            const profit = (production * price) - totalCost;
-
-            return (
-                <div className="bg-white p-6 rounded-lg shadow-md border-t-4 border-yellow-500 w-full max-w-2xl mx-auto">
-                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                        <Icon name="shopping-cart" className="text-yellow-600" /> סימולטור הפלאפל
-                    </h2>
-                    <div className="space-y-4">
-                        <label className="block">עובדים: {workers}</label>
-                        <input type="range" min="0" max="15" value={workers} onChange={e => setWorkers(+e.target.value)} className="w-full" />
-                        <label className="block">מחיר מנה: {price} ₪</label>
-                        <input type="range" min="10" max="50" value={price} onChange={e => setPrice(+e.target.value)} className="w-full" />
-                        <div className={`p-4 rounded text-center text-2xl font-bold ${profit >= 0 ? 'bg-green-100' : 'bg-red-100'}`}>
-                            רווח: {profit} ₪
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-
-        // --- אפליקציה ראשית ---
-        function App() {
-            const [tab, setTab] = useState('home');
-            const [qIdx, setQIdx] = useState(0);
-            const [score, setScore] = useState(0);
-            const [answered, setAnswered] = useState(false);
-
-            const renderContent = () => {
-                if (tab === 'home') return (
-                    <div className="text-center py-20">
-                        <Icon name="brain" size={64} className="mx-auto text-blue-600 mb-4" />
-                        <h1 className="text-5xl font-black mb-4">אקונו-מאסטר <span className="text-blue-600">3000</span></h1>
-                        <p className="text-xl text-gray-600 mb-8">הדרך הכי קלה לעבור מיקרו בלי לבכות.</p>
-                        <button onClick={() => setTab('learn')} className="bg-blue-600 text-white px-8 py-3 rounded-full font-bold">התחל ללמוד</button>
-                    </div>
-                );
-
-                if (tab === 'learn') return (
-                    <div className="p-6 max-w-4xl mx-auto space-y-6">
-                        {learningModules.map(m => (
-                            <div key={m.id} className="bg-white p-6 rounded-xl shadow">
-                                <h3 className="text-2xl font-bold mb-4 border-b pb-2">{m.title}</h3>
-                                {m.content}
-                            </div>
-                        ))}
-                    </div>
-                );
-
-                if (tab === 'simulator') return <div className="py-10"><ProductionSimulator /></div>;
-
-                if (tab === 'exam') {
-                    const q = examQuestions[qIdx];
-                    return (
-                        <div className="p-6 max-w-2xl mx-auto">
-                            <div className="bg-white p-8 rounded-2xl shadow-xl">
-                                <h2 className="text-xl font-bold mb-6">{q.question}</h2>
-                                <div className="space-y-3">
-                                    {q.options.map((opt, i) => (
-                                        <button key={i} onClick={() => !answered && (setAnswered(true), i === q.correct && setScore(score+1))} 
-                                                className={`w-full p-4 rounded-xl border-2 text-right ${answered ? (i === q.correct ? 'bg-green-100 border-green-500' : 'bg-gray-50') : 'hover:bg-blue-50'}`}>
-                                            {opt}
-                                        </button>
-                                    ))}
-                                </div>
-                                {answered && (
-                                    <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                                        <p>{q.explanation}</p>
-                                        <button onClick={() => {setAnswered(false); setQIdx((qIdx + 1) % examQuestions.length)}} className="mt-4 bg-blue-600 text-white px-4 py-2 rounded">שאלה הבאה</button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    );
-                }
-            };
-
-            return (
-                <div className="min-h-screen flex flex-col md:flex-row">
-                    <aside className="bg-slate-900 text-white w-full md:w-64 p-6 flex flex-col">
-                        <div className="flex items-center gap-2 text-xl font-bold mb-8">
-                            <Icon name="pie-chart" className="text-blue-400" /> EconMaster
-                        </div>
-                        <nav className="flex-1 space-y-2">
-                            <button onClick={() => setTab('home')} className={`w-full text-right p-3 rounded flex items-center gap-2 ${tab==='home'?'bg-blue-600':''}`}><Icon name="home" size={18}/> ראשי</button>
-                            <button onClick={() => setTab('learn')} className={`w-full text-right p-3 rounded flex items-center gap-2 ${tab==='learn'?'bg-blue-600':''}`}><Icon name="book-open" size={18}/> לימוד</button>
-                            <button onClick={() => setTab('simulator')} className={`w-full text-right p-3 rounded flex items-center gap-2 ${tab==='simulator'?'bg-blue-600':''}`}><Icon name="calculator" size={18}/> סימולטור</button>
-                            <button onClick={() => setTab('exam')} className={`w-full text-right p-3 rounded flex items-center gap-2 ${tab==='exam'?'bg-blue-600':''}`}><Icon name="award" size={18}/> מבחן</button>
-                        </nav>
-                    </aside>
-                    <main className="flex-1 overflow-auto">{renderContent()}</main>
-                </div>
-            );
-        }
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-</body>
-</html>
+        {/* Main Content Area */}
+        <main className="flex-1 overflow-y-auto bg-gray-100 scroll-smooth">
+          {renderContent()}
+        </main>
+      </div>
+    </div>
+  );
+}
